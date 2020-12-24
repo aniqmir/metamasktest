@@ -21,6 +21,7 @@ const getContract = () => {
   return weenus;
 };
 const App: FunctionComponent = () => {
+  const [nometaMask, setNoMetaMask] = useState<boolean>(true);
   const [error, setError] = useState({
     show: false,
     message: "",
@@ -41,32 +42,41 @@ const App: FunctionComponent = () => {
   }, []);
 
   const getBalances = () => {
-    window.web3.eth.getAccounts(function (err: any, accs: any) {
-      if (err !== null) {
-        setError({
-          show: true,
-          message: err,
-        });
-      } else if (accs.length === 0) {
-        setLogined(false);
-      } else {
-        setLogined(true);
-        let accounts = accs;
-        let account = accounts[0];
-        window.web3.eth.getBalance(account, function (err: any, balance: any) {
-          let bal = window.web3.fromWei(balance, "ether") + " ETH";
-          setEthBalance(bal);
-        });
-        var weenus = getContract();
-        weenus.balanceOf(
-          "0x101848D5C5bBca18E6b4431eEdF6B95E9ADF82FA",
-          (err: any, balance: any) => {
-            let bal = window.web3.fromWei(balance, "ether") + " WEENUS";
-            setWeenusBalance(bal);
-          }
-        );
-      }
-    });
+    if (window.web3) {
+      setNoMetaMask(false);
+      window.web3.eth.getAccounts(function (err: any, accs: any) {
+        if (err !== null) {
+          setError({
+            show: true,
+            message: err,
+          });
+        } else if (accs.length === 0) {
+          setLogined(false);
+        } else {
+          setLogined(true);
+          let accounts = accs;
+          let account = accounts[0];
+          window.web3.eth.getBalance(
+            account,
+            function (err: any, balance: any) {
+              let bal = window.web3.fromWei(balance, "ether") + " ETH";
+              setEthBalance(bal);
+            }
+          );
+          var weenus = getContract();
+          weenus.balanceOf(
+            "0x101848D5C5bBca18E6b4431eEdF6B95E9ADF82FA",
+            (err: any, balance: any) => {
+              let bal = window.web3.fromWei(balance, "ether") + " WEENUS";
+              setWeenusBalance(bal);
+            }
+          );
+        }
+      });
+    } else {
+      console.log("no metamask extension");
+      setNoMetaMask(true);
+    }
   };
 
   //connect web3 with metamask
@@ -176,61 +186,74 @@ const App: FunctionComponent = () => {
         justifyContent: "center",
       }}
     >
-      <div
-        style={{
-          width: "750px",
-          border: "1px solid black",
-          padding: "10px",
-          margin: "10px",
-        }}
-      >
-        {logined ? (
-          <p>Connected to Meta Mask</p>
-        ) : (
-          <button onClick={metaMaskEnabled}>Connect to Meta Mask</button>
-        )}
-        <p>Eth Balnace: {ethBalance}</p>
-        <p>Weenus Balnace: {weenusBalance}</p>
-      </div>
-
-      <form
-        onSubmit={sendTokens}
-        style={{
-          margin: "10px",
-          padding: "10px",
-          border: "1px solid black",
-          display: "grid",
-          gridRowGap: "10px",
-        }}
-      >
-        <label>Transaction Form</label>
-        <input
-          placeholder="Enter Amount..."
-          value={amount}
-          onChange={changeData}
-          name="amount"
-        />
-        <input
-          placeholder="Enter Address..."
-          value={receiverAddress}
-          onChange={changeData}
-          name="receiverAddress"
-        />
-        <p style={{ color: "red", fontSize: "16px", fontWeight: 600 }}>
-          {error.show && error.message}
-        </p>
-        {pendingTxHash && (
-          <>
-            <p style={{ color: "green", fontSize: "16px", fontWeight: 600 }}>
-              PendingTx Hash: {pendingTxHash}
+      {nometaMask ? (
+        <div>
+          <p style={{ fontSize: "16px", fontWeight: 500, color: "red" }}>
+            Install MetaMask Extension!!
+          </p>
+        </div>
+      ) : (
+        <>
+          <div
+            style={{
+              width: "750px",
+              border: "1px solid black",
+              padding: "10px",
+              margin: "10px",
+            }}
+          >
+            {logined ? (
+              <p>Connected to Meta Mask</p>
+            ) : (
+              <button onClick={metaMaskEnabled}>Connect to Meta Mask</button>
+            )}
+            <p>Eth Balnace: {ethBalance}</p>
+            <p>Weenus Balnace: {weenusBalance}</p>
+          </div>
+          <form
+            onSubmit={sendTokens}
+            style={{
+              margin: "10px",
+              padding: "10px",
+              border: "1px solid black",
+              display: "grid",
+              gridRowGap: "10px",
+            }}
+          >
+            <label>Transaction Form</label>
+            <input
+              placeholder="Enter Amount..."
+              value={amount}
+              onChange={changeData}
+              name="amount"
+            />
+            <input
+              placeholder="Enter Address..."
+              value={receiverAddress}
+              onChange={changeData}
+              name="receiverAddress"
+            />
+            <p style={{ color: "red", fontSize: "16px", fontWeight: 600 }}>
+              {error.show && error.message}
             </p>
-            <p style={{ color: "green", fontSize: "14px", fontWeight: 500 }}>
-              Status: &nbsp;{pendingTxHashStatus}
-            </p>
-          </>
-        )}
-        <button type="submit">Send</button>
-      </form>
+            {pendingTxHash && (
+              <>
+                <p
+                  style={{ color: "green", fontSize: "16px", fontWeight: 600 }}
+                >
+                  PendingTx Hash: {pendingTxHash}
+                </p>
+                <p
+                  style={{ color: "green", fontSize: "14px", fontWeight: 500 }}
+                >
+                  Status: &nbsp;{pendingTxHashStatus}
+                </p>
+              </>
+            )}
+            <button type="submit">Send</button>
+          </form>
+        </>
+      )}
     </div>
   );
 };
